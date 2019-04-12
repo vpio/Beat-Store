@@ -13,38 +13,39 @@ var config = {
   messagingSenderId: "562866262962"
 };
 firebase.initializeApp(config);
+const db = firebase.database()
 
 class App extends Component {
   state = {
-    beats: null
+    beats: null,
+    loading: true
   }
 
   componentDidMount() {
-    var storage = firebase.storage();
-    var pathReference = storage.ref('beats/');
-
-    pathReference.getDownloadURL().then(function(url){
-      this.setState({ beats: url })
-    }).catch(function(error) { alert('could not get file! Submit feedback to github.com/vpio') })
+    db.ref('/beats').once('value').then((snapshot) => {
+      // console.log(snapshot.val())
+      let beatTable = [];
+      let beats = snapshot.val();
+      for (var x in beats) {
+        beatTable.push(beats[x])
+      }
+      this.setState({ beats: beatTable, loading: false });
+    })
   }
 
   render() {
+    const {beats, loading} = this.state
     return (
       <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
+          {loading ? <h3>Loading Beats...</h3> : beats.map((beat) => {
+            console.log(beat)
+            return (
+              <React.Fragment>
+                <h3>{beat.name}</h3>
+                <h3>{beat.url}</h3>
+              </React.Fragment>
+            )
+          })}
       </div>
     );
   }
