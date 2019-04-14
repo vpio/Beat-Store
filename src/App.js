@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import firebase from "firebase";
 import logo from './logo.svg';
 import './App.css';
+import Players from 'tone/Tone/source/Players';
+import Dashboard from './components/Dashboard';
 
 // Initialize Firebase
 var config = {
@@ -18,7 +20,8 @@ const db = firebase.database()
 class App extends Component {
   state = {
     beats: null,
-    loading: true
+    loading: true,
+    media: {}
   }
 
   componentDidMount() {
@@ -29,23 +32,40 @@ class App extends Component {
       for (var x in beats) {
         beatTable.push(beats[x])
       }
-      this.setState({ beats: beatTable, loading: false });
+      let urls = {};
+
+      beatTable.forEach((beat) => {
+        let splitName = beat.name.split('.')
+        let formattedName = splitName[0]
+        urls[formattedName] = beat.url
+      })
+
+      this.setState({ beats: beatTable, loading: false, media: urls });
     })
   }
 
+  handleListen = (players, name) => {
+    if (players.state === 'started') { players.stopAll() }
+    players.get(name).start();
+  }
+
+  handleStop = (player) => {
+    player.stopAll();
+  }
+
   render() {
-    const {beats, loading} = this.state
+    const {beats, loading, media} = this.state
+    let player;
+    let test;
+    if (!loading) {
+      player = new Players(media).toMaster();
+      console.log('player', media)
+    }
     return (
       <div className="App">
-          {loading ? <h3>Loading Beats...</h3> : beats.map((beat) => {
-            console.log(beat)
-            return (
-              <React.Fragment>
-                <h3>{beat.name}</h3>
-                <h3>{beat.url}</h3>
-              </React.Fragment>
-            )
-          })}
+        <Dashboard
+          beats={this.state.media}
+          />
       </div>
     );
   }
